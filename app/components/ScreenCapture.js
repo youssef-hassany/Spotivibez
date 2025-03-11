@@ -75,6 +75,7 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
     }
   };
 
+  // Modified shareToInstagramStories function
   const shareToInstagramStories = async () => {
     if (!targetRef.current || isCapturing) return;
 
@@ -90,49 +91,66 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
         logging: false,
       });
 
-      // 2. Convert canvas to blob
+      // 2. Convert canvas to blob with better quality
       const blob = await new Promise((resolve) => {
-        canvas.toBlob((blob) => resolve(blob), "image/png", 0.95);
+        canvas.toBlob((blob) => resolve(blob), "image/png", 1.0); // Using max quality
       });
 
-      // 3. Upload the image to your server to get a public URL
-      // Note: You need to implement this API endpoint
+      // 3. Create file and form data
       const formData = new FormData();
-      formData.append("image", blob, filename);
+      const file = new File([blob], filename, { type: "image/png" });
+      formData.append("image", file);
 
-      const uploadResponse = await fetch("/api/upload-instagram-story", {
-        method: "POST",
-        body: formData,
-      });
+      console.log("Uploading file:", file.size, "bytes");
 
-      if (!uploadResponse.ok) {
-        throw new Error("Failed to upload image");
-      }
+      // 4. Upload the image
+      try {
+        const uploadResponse = await fetch("/api/upload-instagram-story", {
+          method: "POST",
+          body: formData,
+        });
 
-      const { imageUrl } = await uploadResponse.json();
+        // Log the raw response for debugging
+        const responseText = await uploadResponse.text();
+        console.log("Server response:", responseText);
 
-      // 4. Create the Instagram Stories URL with the image
-      // Instagram requires a publicly accessible URL for the image
-      const instagramURL = `instagram://story-camera/share?source_application=your_app_id&media=${encodeURIComponent(
-        imageUrl
-      )}`;
-
-      // 5. Redirect to Instagram Stories
-      window.location.href = instagramURL;
-
-      // Fallback for desktop or if the redirect fails
-      setTimeout(() => {
-        setIsCapturing(false);
-        // Check if redirect didn't happen (usually on desktop)
-        if (document.hasFocus()) {
-          setError(
-            "Instagram Stories sharing works best on mobile devices with Instagram app installed"
-          );
+        if (!uploadResponse.ok) {
+          throw new Error(`Server returned error: ${responseText}`);
         }
-      }, 2000);
+
+        // Parse the response
+        const { imageUrl } = JSON.parse(responseText);
+        console.log("Image uploaded successfully:", imageUrl);
+
+        // 5. Create and use the Instagram URL
+        // Method 1: Using the story-camera approach
+        // const instagramURL = `instagram://story-camera/share?source_application=1234567890&media=${encodeURIComponent(imageUrl)}`;
+
+        // Method 2: Using the web API approach (more compatible)
+        const instagramURL = `https://www.instagram.com/stories/create/?backgroundImage=${encodeURIComponent(
+          imageUrl
+        )}`;
+
+        // Try to open Instagram
+        window.location.href = instagramURL;
+
+        // Set a timeout to check if redirect worked
+        setTimeout(() => {
+          if (document.hasFocus()) {
+            console.log("Redirect didn't happen, still in browser");
+            setError(
+              "Instagram app not detected. Try downloading the image instead."
+            );
+          }
+          setIsCapturing(false);
+        }, 2000);
+      } catch (uploadError) {
+        console.error("Upload failed:", uploadError);
+        throw new Error(`Failed to upload image: ${uploadError.message}`);
+      }
     } catch (error) {
       console.error("Error sharing to Instagram:", error);
-      setError(`Failed to share to Instagram Stories: ${error}`);
+      setError(`Failed to share to Instagram Story: ${error.message}`);
       setIsCapturing(false);
     }
   };
