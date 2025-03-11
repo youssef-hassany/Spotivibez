@@ -1,95 +1,89 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import TopArtists from "./components/TopArtists";
+import RecentPlays from "./components/RecentPlays";
+import LoginButton from "./components/LoginButton";
+import TopTracks from "./components/TopTracks";
+import ScreenCapture from "./components/ScreenCapture";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [userData, setUserData] = useState({
+    topTracks: [],
+    topArtists: [],
+    recentPlays: [],
+  });
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+  // Create a ref for the content we want to capture
+  const captureRef = useRef(null);
+
+  useEffect(() => {
+    // Get token from URL params
+    const params = new URLSearchParams(window.location.search);
+    const accessToken = params.get("access_token");
+
+    if (accessToken) {
+      // Clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      fetchUserData(accessToken);
+    }
+  }, []);
+
+  const fetchUserData = async (accessToken) => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/user-data?access_token=${accessToken}`
+      );
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      const data = await response.json();
+      setUserData(data);
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+      setError("Failed to fetch your Spotify data");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <main className="main">
+      <h1 className="title">Spotivibez</h1>
+
+      {!userData.topTracks.length && (
+        <div className="login-section">
+          <LoginButton />
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      )}
+
+      {error && <div className="error">{error}</div>}
+
+      {isLoading ? (
+        <p className="loading">Loading your Spotify data...</p>
+      ) : (
+        <>
+          {/* This div will be captured */}
+          <div className="user-data" ref={captureRef}>
+            <TopTracks tracks={userData.topTracks} />
+            <TopArtists artists={userData.topArtists} />
+            <RecentPlays plays={userData.recentPlays} />
+          </div>
+
+          {/* Only show capture buttons when user data is loaded */}
+          {userData.topTracks.length > 0 && (
+            <ScreenCapture
+              targetRef={captureRef}
+              filename="spotify-insights.png"
+            />
+          )}
+        </>
+      )}
+    </main>
   );
 }

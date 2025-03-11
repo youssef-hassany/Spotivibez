@@ -1,42 +1,207 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
 * {
-  box-sizing: border-box;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+:root {
+  --background-color: #151515;
+  --card-background: #212121;
+  --card-border: #323232;
+  --text-color: #e0e0e0;
+  --accent-color: #1db954;
+  --error-color: #ff6b6b;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+.container {
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.main {
+  background-color: var(--card-background);
+  background-image: url("data:image/svg+xml,%3Csvg width='70' height='70' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='12' cy='23' r='0.5' fill='black'/%3E%3Ccircle cx='45' cy='76' r='0.5' fill='black'/%3E%3Ccircle cx='78' cy='34' r='0.5' fill='black'/%3E%3Ccircle cx='67' cy='89' r='0.5' fill='black'/%3E%3Ccircle cx='23' cy='56' r='0.5' fill='black'/%3E%3Ccircle cx='89' cy='12' r='0.5' fill='black'/%3E%3Ccircle cx='34' cy='90' r='0.5' fill='black'/%3E%3Ccircle cx='56' cy='45' r='0.5' fill='black'/%3E%3Ccircle cx='90' cy='67' r='0.5' fill='black'/%3E%3Ccircle cx='15' cy='82' r='0.5' fill='black'/%3E%3Ccircle cx='82' cy='15' r='0.5' fill='black'/%3E%3Ccircle cx='37' cy='48' r='0.5' fill='black'/%3E%3Ccircle cx='71' cy='93' r='0.5' fill='black'/%3E%3Ccircle cx='93' cy='71' r='0.5' fill='black'/%3E%3Ccircle cx='48' cy='37' r='0.5' fill='black'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  border: solid 2px var(--card-border);
+  border-radius: 1rem;
+  padding: 2rem;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2.5rem;
+  background: linear-gradient(to right, #1db954, #4285f4);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.login-section {
+  display: flex;
+  justify-content: center;
+  margin: 3rem 0;
+}
+
+.login-btn {
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.login-btn:hover {
+  background-color: #19a34b;
+}
+
+.error {
+  color: var(--error-color);
+  text-align: center;
+  margin: 20px 0;
+}
+
+.loading {
+  text-align: center;
+  margin: 3rem 0;
+  font-size: 1.2rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+  margin-bottom: 40px;
+}
+
+.card {
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: center;
+  background-color: var(--card-background);
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: 15px;
+}
+
+.card h3 {
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+.section {
+  margin-top: 2rem;
+}
+
+.section h2 {
+  margin-bottom: 1rem;
+  font-size: 1.8rem;
+  color: var(--accent-color);
+}
+
+.callback-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 4px solid var(--accent-color);
+  width: 40px;
+  height: 40px;
+  margin-top: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
   }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Add these styles to your CSS file */
+
+.capture-controls {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.capture-error {
+  width: 100%;
+  text-align: center;
+  color: #ff5555;
+  margin-bottom: 10px;
+}
+
+.capture-btn,
+.share-btn {
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.capture-btn {
+  background-color: #1db954; /* Spotify green */
+  color: white;
+}
+
+.share-btn {
+  background-color: #333;
+  color: white;
+}
+
+.capture-btn:hover,
+.share-btn:hover {
+  transform: scale(1.05);
+}
+
+.capture-btn:disabled,
+.share-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
