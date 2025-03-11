@@ -15,16 +15,14 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
       setError("");
 
       const canvas = await html2canvas(targetRef.current, {
-        scale: 2, // Higher scale for better quality
-        useCORS: true, // Enable CORS for Spotify images
-        backgroundColor: "#121212", // Spotify-like dark background
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#121212",
         logging: false,
       });
 
-      // Convert to image
       const image = canvas.toDataURL("image/png");
 
-      // Create download link
       const link = document.createElement("a");
       link.download = filename;
       link.href = image;
@@ -44,7 +42,6 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
       setIsCapturing(true);
       setError("");
 
-      // Check if Web Share API is supported
       if (!navigator.share) {
         alert("Sharing is not supported in your browser");
         setIsCapturing(false);
@@ -58,15 +55,12 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
         logging: false,
       });
 
-      // Convert canvas to blob
       const blob = await new Promise((resolve) => {
         canvas.toBlob((blob) => resolve(blob), "image/png", 0.95);
       });
 
-      // Create file from blob
       const file = new File([blob], filename, { type: "image/png" });
 
-      // Share the file
       await navigator.share({
         title: "My Spotify Insights",
         files: [file],
@@ -74,12 +68,83 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
     } catch (error) {
       console.error("Error sharing screen:", error);
       if (error.name !== "AbortError") {
-        // Ignore if user cancelled
         setError("Failed to share screenshot");
       }
     } finally {
       setIsCapturing(false);
     }
+  };
+
+  const shareToInstagramStories = async () => {
+    if (!targetRef.current || isCapturing) return;
+
+    try {
+      setIsCapturing(true);
+      setError("");
+
+      // 1. Capture the screen
+      const canvas = await html2canvas(targetRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#121212",
+        logging: false,
+      });
+
+      // 2. Convert canvas to blob
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), "image/png", 0.95);
+      });
+
+      // 3. Upload the image to your server to get a public URL
+      // Note: You need to implement this API endpoint
+      const formData = new FormData();
+      formData.append("image", blob, filename);
+
+      const uploadResponse = await fetch("/api/upload-instagram-story", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      const { imageUrl } = await uploadResponse.json();
+
+      // 4. Create the Instagram Stories URL with the image
+      // Instagram requires a publicly accessible URL for the image
+      const instagramURL = `instagram://story-camera/share?source_application=your_app_id&media=${encodeURIComponent(
+        imageUrl
+      )}`;
+
+      // 5. Redirect to Instagram Stories
+      window.location.href = instagramURL;
+
+      // Fallback for desktop or if the redirect fails
+      setTimeout(() => {
+        setIsCapturing(false);
+        // Check if redirect didn't happen (usually on desktop)
+        if (document.hasFocus()) {
+          setError(
+            "Instagram Stories sharing works best on mobile devices with Instagram app installed"
+          );
+        }
+      }, 2000);
+    } catch (error) {
+      console.error("Error sharing to Instagram:", error);
+      setError("Failed to share to Instagram Stories");
+      setIsCapturing(false);
+    }
+  };
+
+  // Helper function to detect if we're on mobile
+  const isMobile = () => {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  };
+
+  // Helper to check if we're likely on a device with Instagram app
+  const isInstagramAvailable = () => {
+    return isMobile(); // Simplified check - mobile devices likely have Instagram
   };
 
   return (
@@ -101,6 +166,16 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
           className="share-btn"
         >
           Share Insights
+        </button>
+      )}
+
+      {isInstagramAvailable() && (
+        <button
+          onClick={shareToInstagramStories}
+          disabled={isCapturing}
+          className="instagram-btn"
+        >
+          Share to Instagram Story
         </button>
       )}
     </div>

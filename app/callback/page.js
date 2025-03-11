@@ -2,8 +2,9 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function Callback() {
+function CallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const code = searchParams.get("code");
@@ -35,5 +36,20 @@ export default function Callback() {
       <h1>Authenticating with Spotify...</h1>
       <div className="loading-spinner"></div>
     </div>
+  );
+}
+
+export default function Callback() {
+  return (
+    <Suspense
+      fallback={
+        <div className="callback-container">
+          <h1>Loading...</h1>
+          <div className="loading-spinner"></div>
+        </div>
+      }
+    >
+      <CallbackContent />
+    </Suspense>
   );
 }

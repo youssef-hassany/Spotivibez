@@ -205,3 +205,33 @@ body {
   cursor: not-allowed;
   transform: none;
 }
+
+/* Add to your existing CSS */
+
+.instagram-btn {
+  padding: 10px 16px;
+  border-radius: 30px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(
+    45deg,
+    #f09433 0%,
+    #e6683c 25%,
+    #dc2743 50%,
+    #cc2366 75%,
+    #bc1888 100%
+  );
+  color: white;
+}
+
+.instagram-btn:hover {
+  transform: scale(1.05);
+}
+
+.instagram-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}

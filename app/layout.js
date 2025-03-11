@@ -4,7 +4,7 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Spotify Insights",
+  title: "Spotivibez",
   description: "View your Spotify statistics and listening habits",
 };
 
