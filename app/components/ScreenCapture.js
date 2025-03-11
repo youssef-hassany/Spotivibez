@@ -132,7 +132,7 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
       }, 2000);
     } catch (error) {
       console.error("Error sharing to Instagram:", error);
-      setError("Failed to share to Instagram Stories");
+      setError(`Failed to share to Instagram Stories: ${error}`);
       setIsCapturing(false);
     }
   };
