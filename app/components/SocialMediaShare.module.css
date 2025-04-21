@@ -1,0 +1,126 @@
+.socialShareContainer {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: #1e1e1e;
+  margin-top: 2rem;
+}
+
+.shareTitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #1db954; /* Spotify green */
+  text-align: center;
+}
+
+.shareButtonsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.shareButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0.5rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+.shareButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.shareButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.iconPlaceholder {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.instagramButton {
+  background: linear-gradient(
+    45deg,
+    #f09433,
+    #e6683c,
+    #dc2743,
+    #cc2366,
+    #bc1888
+  );
+}
+
+.twitterButton {
+  background-color: #1da1f2;
+}
+
+.whatsappButton {
+  background-color: #25d366;
+}
+
+.facebookButton {
+  background-color: #4267b2;
+}
+
+.nativeButton {
+  background-color: #7e57c2;
+}
+
+.downloadButton {
+  background-color: #607d8b;
+}
+
+.errorMessage {
+  color: #ff4a4a;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(255, 74, 74, 0.1);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.statusMessage {
+  color: #1db954;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(29, 185, 84, 0.1);
+  border-radius: 4px;
+  text-align: center;
+}
+
+.loadingIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(29, 185, 84, 0.1);
+  border-radius: 50%;
+  border-top-color: #1db954;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 0.75rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 640px) {
+  .shareButtonsContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

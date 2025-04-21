@@ -2,176 +2,389 @@
 
 import { useState, useRef } from "react";
 import html2canvas from "html2canvas";
+import styles from "./SocialMediaShare.module.css";
 
-const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
+const ScreenCapture = ({ targetRef, appName = "SpotiVibes" }) => {
   const [isCapturing, setIsCapturing] = useState(false);
-  const [error, setError] = useState("");
+  const [currentPlatform, setCurrentPlatform] = useState(null);
   const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+  const [imageBlob, setImageBlob] = useState(null);
+  const [imageUrl, setImageUrl] = useState("");
 
-  // Capture and download directly
-  const captureAndDownload = async () => {
-    if (!targetRef.current || isCapturing) return;
+  // Capture screen content using html2canvas
+  const captureScreen = async () => {
+    if (!targetRef.current || isCapturing) return null;
 
     try {
-      setIsCapturing(true);
-      setError("");
-      setStatus("Capturing screen...");
+      setStatus("Capturing your insights...");
 
       const canvas = await html2canvas(targetRef.current, {
-        scale: 2,
+        scale: 2, // Higher quality
         useCORS: true,
         backgroundColor: "#121212",
         logging: false,
       });
 
-      // Create download link
-      const image = canvas.toDataURL("image/png", 1.0);
-      const link = document.createElement("a");
-      link.download = filename;
-      link.href = image;
-      link.click();
+      // Convert to blob for upload or direct sharing
+      const blob = await new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), "image/png", 1.0);
+      });
 
-      setStatus(
-        "Image downloaded! Open Instagram and create a new story to share it."
-      );
+      setImageBlob(blob);
+      return blob;
     } catch (error) {
-      console.error("Error capturing screen:", error);
-      setError(`Failed to capture screen: ${error.message}`);
-    } finally {
-      setIsCapturing(false);
+      console.error("Screen capture failed:", error);
+      setError(`Couldn't capture your insights: ${error.message}`);
+      return null;
     }
   };
 
-  // Capture and use device's native share if available
-  const captureAndShare = async () => {
-    if (!targetRef.current || isCapturing) return;
+  // Upload image to get sharable URL
+  const uploadImage = async (blob) => {
+    if (!blob) return null;
 
     try {
-      setIsCapturing(true);
-      setError("");
-      setStatus("Capturing screen...");
+      setStatus("Preparing your image for sharing...");
 
-      if (!navigator.share) {
-        setError("Native sharing not supported in your browser");
+      const formData = new FormData();
+      const file = new File([blob], `${appName.toLowerCase()}-insights.png`, {
+        type: "image/png",
+      });
+      formData.append("image", file);
+
+      const response = await fetch("/api/upload-image", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Upload failed: ${errorText}`);
+      }
+
+      const data = await response.json();
+      setImageUrl(data.imageUrl);
+      return data.imageUrl;
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      setError(`Couldn't prepare your image: ${error.message}`);
+      return null;
+    }
+  };
+
+  // Instagram Story sharing
+  const shareToInstagramStory = async () => {
+    setCurrentPlatform("instagram");
+    setIsCapturing(true);
+    setError("");
+
+    try {
+      // First capture the screen
+      const blob = await captureScreen();
+      if (!blob) {
         setIsCapturing(false);
         return;
       }
 
-      const canvas = await html2canvas(targetRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#121212",
-        logging: false,
-      });
+      // For Instagram Stories, we need a public URL
+      const url = await uploadImage(blob);
+      if (!url) {
+        setIsCapturing(false);
+        return;
+      }
 
-      const blob = await new Promise((resolve) => {
-        canvas.toBlob((blob) => resolve(blob), "image/png", 0.95);
-      });
+      // On mobile, try direct Instagram stories URL
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        // Try the Instagram URL scheme
+        const instagramURL = `instagram://story-camera`;
+        window.location.href = instagramURL;
 
-      const file = new File([blob], filename, { type: "image/png" });
+        setStatus(
+          "Instagram should be opening. Select your downloaded image to create your story!"
+        );
 
-      try {
-        await navigator.share({
-          title: "My Spotify Insights",
-          files: [file],
-        });
-        setStatus("Share dialog opened!");
-      } catch (shareError) {
-        if (shareError.name !== "AbortError") {
-          throw shareError;
-        }
+        // As a fallback, also trigger download
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `${appName.toLowerCase()}-insights.png`;
+        link.href = downloadUrl;
+        link.click();
+        URL.revokeObjectURL(downloadUrl);
+      } else {
+        // On desktop, provide instructions with download
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `${appName.toLowerCase()}-insights.png`;
+        link.href = downloadUrl;
+        link.click();
+        URL.revokeObjectURL(downloadUrl);
+
+        setStatus(
+          "Image downloaded! Open Instagram on your phone to share it to your Story."
+        );
       }
     } catch (error) {
-      console.error("Error sharing:", error);
-      setError(`Sharing failed: ${error.message}`);
+      console.error("Instagram sharing failed:", error);
+      setError(`Couldn't share to Instagram: ${error.message}`);
     } finally {
       setIsCapturing(false);
     }
   };
 
-  // Try to open Instagram directly with instructions
-  const openInstagramWithInstructions = async () => {
-    if (!targetRef.current || isCapturing) return;
+  // Twitter/X sharing
+  const shareToTwitter = async () => {
+    setCurrentPlatform("twitter");
+    setIsCapturing(true);
+    setError("");
 
     try {
-      setIsCapturing(true);
-      setError("");
-      setStatus("Preparing to open Instagram...");
+      // First capture the screen
+      const blob = await captureScreen();
+      if (!blob) {
+        setIsCapturing(false);
+        return;
+      }
 
-      // First download the image
-      const canvas = await html2canvas(targetRef.current, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#121212",
-        logging: false,
-      });
+      // For Twitter, we can use Web Intent API with text
+      const tweetText = `Check out my Spotify insights from ${appName}! #SpotifyInsights`;
+      const encodedText = encodeURIComponent(tweetText);
 
-      // Create download link
-      const image = canvas.toDataURL("image/png", 1.0);
+      // Also download the image for user to attach
+      const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.download = filename;
-      link.href = image;
+      link.download = `${appName.toLowerCase()}-insights.png`;
+      link.href = downloadUrl;
       link.click();
+      URL.revokeObjectURL(downloadUrl);
 
-      // Wait a moment for download to start
-      setTimeout(() => {
-        // Try to open Instagram app
-        if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-          window.location.href = "instagram://camera";
-          setStatus(
-            "Image downloaded! Instagram app should be opening. Select the downloaded image to create your story."
-          );
-        } else {
-          window.open("https://www.instagram.com/", "_blank");
-          setStatus(
-            "Image downloaded! Instagram web opened in a new tab. For story sharing, use the Instagram mobile app."
-          );
-        }
-      }, 2000);
+      // Open Twitter Web Intent
+      window.open(
+        `https://twitter.com/intent/tweet?text=${encodedText}`,
+        "_blank"
+      );
+
+      setStatus(
+        "Image downloaded and Twitter opened! Attach the image to your tweet."
+      );
     } catch (error) {
-      console.error("Error:", error);
-      setError(`Process failed: ${error.message}`);
+      console.error("Twitter sharing failed:", error);
+      setError(`Couldn't share to Twitter: ${error.message}`);
     } finally {
       setIsCapturing(false);
     }
   };
 
-  // Determine if we're on a mobile device
-  const isMobile = () => {
-    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  // WhatsApp sharing
+  const shareToWhatsApp = async () => {
+    setCurrentPlatform("whatsapp");
+    setIsCapturing(true);
+    setError("");
+
+    try {
+      // First capture the screen
+      const blob = await captureScreen();
+      if (!blob) {
+        setIsCapturing(false);
+        return;
+      }
+
+      // For WhatsApp, download the image and open WhatsApp
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `${appName.toLowerCase()}-insights.png`;
+      link.href = downloadUrl;
+      link.click();
+      URL.revokeObjectURL(downloadUrl);
+
+      // WhatsApp text
+      const whatsappText = `Check out my Spotify insights from ${appName}!`;
+      const encodedText = encodeURIComponent(whatsappText);
+
+      // Open WhatsApp with text
+      window.open(`https://wa.me/?text=${encodedText}`, "_blank");
+
+      setStatus(
+        "Image downloaded and WhatsApp opened! Attach the image to your message."
+      );
+    } catch (error) {
+      console.error("WhatsApp sharing failed:", error);
+      setError(`Couldn't share to WhatsApp: ${error.message}`);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  // Facebook sharing
+  const shareToFacebook = async () => {
+    setCurrentPlatform("facebook");
+    setIsCapturing(true);
+    setError("");
+
+    try {
+      // First capture the screen
+      const blob = await captureScreen();
+      if (!blob) {
+        setIsCapturing(false);
+        return;
+      }
+
+      // For Facebook, download the image and open Facebook
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `${appName.toLowerCase()}-insights.png`;
+      link.href = downloadUrl;
+      link.click();
+      URL.revokeObjectURL(downloadUrl);
+
+      // Open Facebook
+      window.open("https://www.facebook.com/", "_blank");
+
+      setStatus(
+        "Image downloaded and Facebook opened! Create a new post and attach the image."
+      );
+    } catch (error) {
+      console.error("Facebook sharing failed:", error);
+      setError(`Couldn't share to Facebook: ${error.message}`);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  // Use native share if available (works best on mobile)
+  const useNativeShare = async () => {
+    if (!navigator.share) {
+      setError("Native sharing not supported in your browser");
+      return;
+    }
+
+    setCurrentPlatform("native");
+    setIsCapturing(true);
+    setError("");
+
+    try {
+      // First capture the screen
+      const blob = await captureScreen();
+      if (!blob) {
+        setIsCapturing(false);
+        return;
+      }
+
+      const file = new File([blob], `${appName.toLowerCase()}-insights.png`, {
+        type: "image/png",
+      });
+
+      await navigator.share({
+        title: `My ${appName} Insights`,
+        text: `Check out my Spotify insights from ${appName}!`,
+        files: [file],
+      });
+
+      setStatus("Share sheet opened!");
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.error("Native sharing failed:", error);
+        setError(`Sharing failed: ${error.message}`);
+      }
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  // Simple download function
+  const downloadImage = async () => {
+    setCurrentPlatform("download");
+    setIsCapturing(true);
+    setError("");
+
+    try {
+      // First capture the screen
+      const blob = await captureScreen();
+      if (!blob) {
+        setIsCapturing(false);
+        return;
+      }
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `${appName.toLowerCase()}-insights.png`;
+      link.href = downloadUrl;
+      link.click();
+      URL.revokeObjectURL(downloadUrl);
+
+      setStatus("Image downloaded successfully!");
+    } catch (error) {
+      console.error("Download failed:", error);
+      setError(`Couldn't download image: ${error.message}`);
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   return (
-    <div className="capture-controls">
-      {error && <div className="error-message">{error}</div>}
-      {/* {status && <div className="status-message">{status}</div>} */}
+    <div className={styles.socialShareContainer}>
+      <h3 className={styles.shareTitle}>Share Your Spotify Insights</h3>
 
-      <button
-        onClick={captureAndDownload}
-        disabled={isCapturing}
-        className="btn download-btn"
-      >
-        {isCapturing ? "Processing..." : "Download Image"}
-      </button>
+      {error && <div className={styles.errorMessage}>{error}</div>}
+      {status && <div className={styles.statusMessage}>{status}</div>}
 
-      {navigator?.canShare && (
+      <div className={styles.shareButtonsContainer}>
         <button
-          onClick={captureAndShare}
+          onClick={shareToInstagramStory}
           disabled={isCapturing}
-          className="btn share-btn"
+          className={`${styles.shareButton} ${styles.instagramButton}`}
         >
-          Share Image
+          <span className={styles.iconPlaceholder}>📸</span> Instagram Story
         </button>
-      )}
 
-      {isMobile() && (
         <button
-          onClick={openInstagramWithInstructions}
+          onClick={shareToTwitter}
           disabled={isCapturing}
-          className="btn instagram-btn"
+          className={`${styles.shareButton} ${styles.twitterButton}`}
         >
-          Save & Open Instagram
+          <span className={styles.iconPlaceholder}>🐦</span> Twitter/X
         </button>
+
+        <button
+          onClick={shareToWhatsApp}
+          disabled={isCapturing}
+          className={`${styles.shareButton} ${styles.whatsappButton}`}
+        >
+          <span className={styles.iconPlaceholder}>💬</span> WhatsApp
+        </button>
+
+        <button
+          onClick={shareToFacebook}
+          disabled={isCapturing}
+          className={`${styles.shareButton} ${styles.facebookButton}`}
+        >
+          <span className={styles.iconPlaceholder}>👥</span> Facebook
+        </button>
+
+        {navigator?.share && (
+          <button
+            onClick={useNativeShare}
+            disabled={isCapturing}
+            className={`${styles.shareButton} ${styles.nativeButton}`}
+          >
+            <span className={styles.iconPlaceholder}>📱</span> Share
+          </button>
+        )}
+
+        <button
+          onClick={downloadImage}
+          disabled={isCapturing}
+          className={`${styles.shareButton} ${styles.downloadButton}`}
+        >
+          <span className={styles.iconPlaceholder}>💾</span> Download
+        </button>
+      </div>
+
+      {isCapturing && (
+        <div className={styles.loadingIndicator}>
+          <div className={styles.spinner}></div>
+          <p>Preparing your insights...</p>
+        </div>
       )}
     </div>
   );
