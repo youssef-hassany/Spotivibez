@@ -1,4 +1,3 @@
-// app/api/upload-instagram-story/route.js
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { v4 as uuidv4 } from "uuid";
@@ -29,9 +28,11 @@ export async function POST(request) {
     const fileName = `spotify-insights-${uuidv4()}.png`;
 
     try {
-      // Upload to Vercel Blob storage
+      // Add a token parameter if you want to pass it directly instead of using env var
+      // This is optional if you've set the BLOB_READ_WRITE_TOKEN environment variable
       const { url } = await put(fileName, file, {
         access: "public",
+        // token: process.env.BLOB_READ_WRITE_TOKEN  // Uncomment if you want to access token from env
       });
 
       console.log("Image uploaded to Vercel Blob:", url);
