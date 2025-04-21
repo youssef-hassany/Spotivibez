@@ -127,7 +127,7 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
             "Image downloaded! Instagram web opened in a new tab. For story sharing, use the Instagram mobile app."
           );
         }
-      }, 500);
+      }, 2000);
     } catch (error) {
       console.error("Error:", error);
       setError(`Process failed: ${error.message}`);
@@ -144,7 +144,7 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
   return (
     <div className="capture-controls">
       {error && <div className="error-message">{error}</div>}
-      {status && <div className="status-message">{status}</div>}
+      {/* {status && <div className="status-message">{status}</div>} */}
 
       <button
         onClick={captureAndDownload}
@@ -172,18 +172,6 @@ const ScreenCapture = ({ targetRef, filename = "spotify-insights.png" }) => {
         >
           Save & Open Instagram
         </button>
-      )}
-
-      {!isMobile() && (
-        <div className="desktop-instructions">
-          <p>For Instagram Stories:</p>
-          <ol>
-            <li>Download the image using the button above</li>
-            <li>Send the image to your mobile device</li>
-            <li>Open Instagram app and create a new story</li>
-            <li>Select the image from your gallery</li>
-          </ol>
-        </div>
       )}
     </div>
   );

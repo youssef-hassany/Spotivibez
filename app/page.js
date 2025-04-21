@@ -53,7 +53,7 @@ export default function Home() {
   };
 
   return (
-    <main className="main">
+    <main className="main" ref={captureRef}>
       <h1 className="title">Spotivibez</h1>
 
       {!userData.topTracks.length && (
@@ -69,7 +69,7 @@ export default function Home() {
       ) : (
         <>
           {/* This div will be captured */}
-          <div className="user-data" ref={captureRef}>
+          <div className="user-data">
             <TopTracks tracks={userData.topTracks} />
             <TopArtists artists={userData.topArtists} />
             <RecentPlays plays={userData.recentPlays} />
