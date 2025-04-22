@@ -235,3 +235,46 @@ body {
   cursor: not-allowed;
   transform: none;
 }
+
+.share-page {
+  background-color: #121212;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.share-container {
+  max-width: 650px;
+  width: 100%;
+  text-align: center;
+}
+
+h1 {
+  color: #1db954;
+  margin-bottom: 2rem;
+}
+
+.image-container {
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.share-info {
+  margin-top: 2rem;
+}
+
+.create-button {
+  display: inline-block;
+  background-color: #1db954;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 1rem;
+}
