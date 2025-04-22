@@ -1,4 +1,3 @@
-// app/api/upload-image/route.js
 import { NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { v4 as uuidv4 } from "uuid";
@@ -8,6 +7,7 @@ export async function POST(request) {
     // Parse the form data
     const formData = await request.formData();
     const file = formData.get("image");
+    const platform = formData.get("platform") || "generic";
 
     if (!file) {
       return NextResponse.json(
@@ -17,7 +17,8 @@ export async function POST(request) {
     }
 
     // Create a unique filename
-    const fileName = `spotify-insights-${uuidv4()}.png`;
+    const uniqueId = uuidv4();
+    const fileName = `spotify-insights-${uniqueId}.png`;
 
     try {
       // Make sure BLOB_READ_WRITE_TOKEN is set in environment variables
@@ -25,17 +26,35 @@ export async function POST(request) {
         access: "public",
       });
 
+      // For Facebook and Twitter, generate a URL to a page with proper OG tags
+      // This is better than direct image links for social media sharing
+      if (platform === "facebook" || platform === "twitter") {
+        // URL to your share page with the image ID
+        const sharePageUrl = `${
+          process.env.NEXT_PUBLIC_BASE_URL || process.env.VERCEL_URL || ""
+        }/share/${uniqueId}`;
+
+        return NextResponse.json({
+          imageUrl: url,
+          shareUrl: sharePageUrl,
+        });
+      }
+
+      // For other platforms, return the direct image URL
       return NextResponse.json({ imageUrl: url });
     } catch (blobError) {
       console.error("Blob storage error:", blobError);
 
-      // If we can't use Blob storage, fall back to Base64
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const base64 = buffer.toString("base64");
-      const dataUrl = `data:${file.type};base64,${base64}`;
-
-      return NextResponse.json({ imageUrl: dataUrl });
+      // If we can't use Blob storage, for small images we could use base64
+      // But this isn't ideal for larger images
+      return NextResponse.json(
+        {
+          error: "Blob storage error",
+          details:
+            "Unable to store image. Please ensure BLOB_READ_WRITE_TOKEN is configured.",
+        },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error("Upload handler error:", error);
