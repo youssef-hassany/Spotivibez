@@ -19,12 +19,18 @@ const ScreenCapture = ({ targetRef, appName = "SpotiVibes" }) => {
     try {
       setStatus("Capturing your insights...");
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const canvas = await html2canvas(targetRef.current, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#121212",
         logging: false,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       // Get both blob and data URL for different uses
       const blob = await new Promise((resolve) => {
@@ -99,6 +105,7 @@ const ScreenCapture = ({ targetRef, appName = "SpotiVibes" }) => {
         type: "image/png",
       });
       formData.append("image", file);
+      formData.append("platform", "twitter");
 
       // Upload to your server
       const response = await fetch("/api/upload-image", {
@@ -169,6 +176,7 @@ const ScreenCapture = ({ targetRef, appName = "SpotiVibes" }) => {
         type: "image/png",
       });
       formData.append("image", file);
+      formData.append("platform", "whatsapp");
 
       const response = await fetch("/api/upload-image", {
         method: "POST",
@@ -240,6 +248,7 @@ const ScreenCapture = ({ targetRef, appName = "SpotiVibes" }) => {
         type: "image/png",
       });
       formData.append("image", file);
+      formData.append("platform", "facebook");
 
       const response = await fetch("/api/upload-image", {
         method: "POST",
@@ -258,57 +267,32 @@ const ScreenCapture = ({ targetRef, appName = "SpotiVibes" }) => {
     }
   };
 
-  // Instagram Story - alternative approach using data URI scheme on iOS
   const shareToInstagramStory = async () => {
     setCurrentPlatform("instagram");
     setIsCapturing(true);
     setError("");
 
     try {
-      // First capture the screen
-      const { blob, dataUrl } = await captureScreen();
-      if (!blob) {
-        setIsCapturing(false);
-        return;
-      }
+      const { blob } = await captureScreen();
+      if (!blob) return;
 
-      const isIOS =
-        /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      // Immediate download for iOS
+      downloadImage(blob, `${appName.toLowerCase()}-insights.png`);
 
-      if (isIOS) {
-        // iOS specific approach using specially formatted URL
-        // This is an undocumented approach that may work on iOS
-        try {
-          // Get an uploaded image URL
-          const imageUrl = await uploadImage(blob);
-
-          if (imageUrl) {
-            // Special URL format for Instagram on iOS
-            const instagramURL = `instagram://library?AssetPath=${encodeURIComponent(
-              imageUrl
-            )}`;
-            window.location.href = instagramURL;
-
-            // Set timeout to check if redirect happened
-            setTimeout(() => {
-              if (document.hasFocus()) {
-                // Fallback if redirect didn't work
-                useInstagramFallback(blob);
-              }
-            }, 2000);
-          } else {
-            useInstagramFallback(blob);
-          }
-        } catch (e) {
-          useInstagramFallback(blob);
-        }
+      // Show mobile instructions
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        setStatus(
+          "Image downloaded! Switch to Instagram and create a story from your gallery."
+        );
+        setTimeout(() => {
+          window.location.href = "instagram://";
+        }, 1000);
       } else {
-        // Android or other platforms
-        useInstagramFallback(blob);
+        setStatus("Image downloaded! Use mobile to share to Instagram.");
       }
     } catch (error) {
-      console.error("Instagram sharing failed:", error);
-      setError(`Couldn't share to Instagram: ${error.message}`);
+      setError(`Instagram share failed: ${error.message}`);
+    } finally {
       setIsCapturing(false);
     }
   };
